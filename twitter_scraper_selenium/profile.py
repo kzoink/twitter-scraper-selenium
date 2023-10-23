@@ -4,11 +4,13 @@ from typing import Union
 from .driver_initialization import Initializer
 from .driver_utils import Utilities
 from .element_finder import Finder
+from dateutil.parser import parse
 import re
 import json
 import csv
 import os
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 format = logging.Formatter(
@@ -22,7 +24,7 @@ class Profile:
     """this class needs to be instantiated in orer to scrape post of some
     twitter profile"""
 
-    def __init__(self, twitter_username, browser, proxy, tweets_count, headless):
+    def __init__(self, twitter_username, browser, proxy, tweets_count, headless, since="", until=""):
         self.twitter_username = twitter_username
         self.URL = "https://twitter.com/{}".format(twitter_username.lower())
         self.__driver = ""
@@ -32,6 +34,17 @@ class Profile:
         self.posts_data = {}
         self.retry = 10
         self.headless = headless
+
+        if since == "":
+            self.since = datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc).isoformat()
+        else:
+            self.since = parse(since).isoformat()
+
+        if until == "":
+            self.until = datetime.utcnow().isoformat()
+        else:
+            self.until = parse(until).isoformat()
+
 
     def __start_driver(self):
         """changes the class member __driver value to driver on call"""
@@ -76,6 +89,8 @@ class Profile:
                     mentions = re.findall(r"@(\w+)", content)
                     profile_picture = Finder.find_profile_image_link(tweet)
                     link = Finder.find_external_link(tweet)
+                    if (posted_time < self.since or posted_time > self.until):
+                        continue
                     self.posts_data[status] = {
                         "tweet_id": status,
                         "username": username,
@@ -174,7 +189,7 @@ def json_to_csv(filename, json_data, directory):
 
 def scrape_profile(twitter_username: str, browser: str = "firefox", proxy: Union[str, None] = None,
                   tweets_count: int = 10, output_format: str = "json", filename: str = "", directory: str = os.getcwd(),
-                  headless: bool = True):
+                  headless: bool = True, since: str = "", until: str = ""):
     """Scrap tweets of twitter profile using twitter username.
 
     Args:
@@ -186,12 +201,13 @@ def scrape_profile(twitter_username: str, browser: str = "firefox", proxy: Union
         filename (str, optional): If output_format parameter is set to CSV, then it is necessary for filename parameter to passed. If not passed then the filename will be same as keyword passed. Defaults to "".
         directory (str, optional): If output_format parameter is set to CSV, then it is valid for directory parameter to be passed. If not passed then CSV file will be saved in current working directory. Defaults to os.getcwd().
         headless (bool, optional): Whether to run browser in headless mode?. Defaults to True.
-
+        since (str, optional): Limit tweets returned to after this date and time (inclusive). Format: YYYY-MM-DDThh:mm:ssTZD. Timezone: UTC. Example: "2006-01-01T00:00:00Z"
+        until (str, optional): Limit tweets returned to before this date and time (inclusive). Format: YYYY-MM-DDThh:mm:ssTZD. Timezone: UTC. Example: "2030-01-01T00:00:00Z"
     Returns:
         str: tweets data in CSV or JSON
     """
     profile_bot = Profile(twitter_username, browser,
-                          proxy, tweets_count, headless)
+                          proxy, tweets_count, headless, since, until)
     data = profile_bot.scrap()
     if output_format.lower() == "json":
         if filename == '':

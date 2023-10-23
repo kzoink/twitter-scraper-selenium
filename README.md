@@ -395,6 +395,16 @@ Output:
             <td>Boolean</td>
             <td>Whether to run crawler headlessly?. Default is <code>True</code></td>
         </tr>
+        <tr>
+            <td>since</td>
+            <td>String</td>
+            <td>Limit tweets returned to after this date and time (inclusive). Format: YYYY-MM-DDThh:mm:ssTZD. Timezone: UTC. Example: "2006-01-01T00:00:00Z". (Optional)</td>
+        </tr>
+        <tr>
+            <td>until</td>
+            <td>String</td>
+            <td>Limit tweets returned to before this date and time (inclusive). Format: YYYY-MM-DDThh:mm:ssTZD. Timezone: UTC. Example: "2030-01-01T00:00:00Z". (Optional)</td>
+        </tr>
     </tbody>
 </table>
 
